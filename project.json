@@ -1,0 +1,43 @@
+{
+  "name": "transport-i2p",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "packages/transports/i2p",
+  "tags": ["type:lib", "lang:go", "transport"],
+  "namedInputs": {
+    "go": ["{projectRoot}/**/*.go", "{projectRoot}/go.mod", "{projectRoot}/go.sum"]
+  },
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "inputs": ["go"],
+      "options": {
+        "cwd": "packages/transports/i2p",
+        "command": "go build ./..."
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "inputs": ["go"],
+      "options": {
+        "cwd": "packages/transports/i2p",
+        "command": "go test ./..."
+      }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "inputs": ["go"],
+      "options": {
+        "cwd": "packages/transports/i2p",
+        "command": "go vet ./..."
+      }
+    },
+    "tidy": {
+      "executor": "nx:run-commands",
+      "options": {
+        "cwd": "packages/transports/i2p",
+        "command": "go mod tidy"
+      }
+    }
+  }
+}

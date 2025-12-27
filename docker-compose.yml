@@ -1,0 +1,95 @@
+services:
+  # I2P Router for Node 1 (using Java I2P with SAM enabled)
+  # Using host network mode for true reachability
+  i2p-node1:
+    build:
+      context: ./docker/java-i2p
+      dockerfile: Dockerfile
+    container_name: i2p-node1
+    hostname: i2p-node1
+    network_mode: "host"
+    volumes:
+      - i2p-node1-data:/i2p/.i2p
+    environment:
+      - JVM_XMX=512m
+      - I2P_UDP_PORT=9111
+      - I2P_TCP_PORT=9112
+      - FORCE_REACHABLE=true  # Force router to consider itself reachable
+    healthcheck:
+      test: ["CMD", "sh", "-c", "netstat -an | grep 7656 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 300s
+    restart: unless-stopped
+
+  # I2P Router for Node 2 (using Java I2P with SAM enabled)
+  # Using host network mode for true reachability
+  i2p-node2:
+    build:
+      context: ./docker/java-i2p
+      dockerfile: Dockerfile
+    container_name: i2p-node2
+    hostname: i2p-node2
+    network_mode: "host"
+    volumes:
+      - i2p-node2-data:/i2p/.i2p
+    environment:
+      - JVM_XMX=512m
+      - I2P_UDP_PORT=9113
+      - I2P_TCP_PORT=9114
+      - SAM_PORT=7756
+      - I2CP_PORT=7757
+      - HTTP_PROXY_PORT=4544
+      - CONSOLE_PORT=7170
+      - FORCE_REACHABLE=true  # Force router to consider itself reachable
+    healthcheck:
+      test: ["CMD", "sh", "-c", "netstat -an | grep 7756 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 300s
+    restart: unless-stopped
+
+  # I2P Router for Node 3 (optional, for multi-node tests, using Java I2P)
+  i2p-node3:
+    image: geti2p/i2p:latest
+    container_name: i2p-node3
+    hostname: i2p-node3
+    networks:
+      - i2p-test-network
+    ports:
+      - "7856:7656"  # SAM port (different host port)
+      - "7857:7657"  # I2CP port
+      - "4644:4444"  # HTTP proxy
+      - "7270:7070"  # Web console
+    volumes:
+      - i2p-node3-data:/i2p/.i2p
+    environment:
+      - JVM_XMX=512m
+      - ENABLE_SAM=true
+    healthcheck:
+      test: ["CMD", "sh", "-c", "netstat -an | grep 7656 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 300s
+    restart: unless-stopped
+    profiles:
+      - multi-node  # Only start with --profile multi-node
+
+networks:
+  i2p-test-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+volumes:
+  i2p-node1-data:
+    driver: local
+  i2p-node2-data:
+    driver: local
+  i2p-node3-data:
+    driver: local
+

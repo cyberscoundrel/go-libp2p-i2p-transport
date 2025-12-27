@@ -1,6 +1,7 @@
 package i2p
 
 import (
+	"fmt"
 	"net"
 
 	"github.com/joomcode/errorx"
@@ -10,8 +11,8 @@ import (
 	"github.com/eyedeekay/sam3"
 )
 
-//this struct only exists to satisfy the interface requirements for libp2p connection
-//upgrader
+// this struct only exists to satisfy the interface requirements for libp2p connection
+// upgrader
 type TransportListener struct {
 	streamListener *sam3.StreamListener
 	multiAddr      ma.Multiaddr
@@ -31,15 +32,30 @@ func NewTransportListener(streamListener *sam3.StreamListener) (*TransportListen
 
 func (t *TransportListener) Accept() (manet.Conn, error) {
 	conn, err := t.streamListener.Accept()
-	localAddress, err := I2PAddrToMultiAddr(t.streamListener.Addr().String()) //manet.FromNetAddr(t.streamListener.a)
 	if err != nil {
-		return nil, errorx.Decorate(err, "Unable to constuct multi-addr from net address")
+		return nil, errorx.Decorate(err, "Failed to accept connection")
+	}
+
+	// Verify connection is not nil
+	if conn == nil {
+		return nil, fmt.Errorf("accepted connection is nil")
+	}
+
+	localAddress, err := I2PAddrToMultiAddr(t.streamListener.Addr().String())
+	if err != nil {
+		conn.Close()
+		return nil, errorx.Decorate(err, "Unable to construct multi-addr from local address")
 	}
 
 	remoteAddress, err := I2PAddrToMultiAddr(conn.RemoteAddr().String())
+	if err != nil {
+		conn.Close()
+		return nil, errorx.Decorate(err, "Unable to construct multi-addr from remote address")
+	}
 
 	inboundConnection, err := NewConnection(conn, localAddress, remoteAddress)
 	if err != nil {
+		conn.Close()
 		return nil, errorx.Decorate(err, "Failed to construct Connection type")
 	}
 
